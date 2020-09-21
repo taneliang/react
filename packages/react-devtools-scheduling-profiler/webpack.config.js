@@ -59,7 +59,7 @@ const config = {
       'process.env.DEVTOOLS_VERSION': `"${DEVTOOLS_VERSION}"`,
     }),
     new HtmlWebpackPlugin({
-      title: 'React Concurrent Mode Profiler',
+      title: 'Flappy Room Tool',
     }),
     shouldUseDevServer && new ReactRefreshWebpackPlugin(),
   ].filter(Boolean),
