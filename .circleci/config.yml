@@ -250,7 +250,7 @@ jobs:
   yarn_build:
     docker: *docker
     environment: *environment
-    parallelism: 20
+    parallelism: 4
     steps:
       - checkout
       - *restore_node_modules
@@ -260,7 +260,7 @@ jobs:
           command: |
             ./scripts/circleci/add_build_info_json.sh
             ./scripts/circleci/update_package_versions.sh
-            yarn build
+            yarn build-for-devtools
       - run: echo "experimental" >> build/RELEASE_CHANNEL
       - persist_to_workspace:
           root: build
@@ -312,6 +312,24 @@ jobs:
             tar -zcvf ../../../build/devtools-scheduling-profiler.tgz .
       - store_artifacts:
           path: ./build/devtools-scheduling-profiler.tgz
+      - persist_to_workspace:
+          root: packages/react-devtools-scheduling-profiler
+          paths:
+            - dist
+  
+  deploy_devtools_scheduling_profiler:
+    docker: *docker
+    environment: *environment
+    steps:
+      - checkout
+      - attach_workspace:
+          at: packages/react-devtools-scheduling-profiler
+      - *restore_node_modules
+      - run:
+          name: Deploy
+          command: |
+            cd packages/react-devtools-scheduling-profiler
+            yarn vercel deploy dist --prod --confirm --token $SCHEDULING_PROFILER_DEPLOY_VERCEL_TOKEN
 
   # These jobs are named differently so we can distinguish the stable and
   # and experimental artifacts
@@ -451,106 +469,109 @@ jobs:
 
 workflows:
   version: 2
-  stable:
-    jobs:
-      - setup
-      - yarn_lint:
-          requires:
-            - setup
-      - yarn_flow:
-          requires:
-            - setup
-      - RELEASE_CHANNEL_stable_yarn_test:
-          requires:
-            - setup
-      - RELEASE_CHANNEL_stable_yarn_test_prod:
-          requires:
-            - setup
-      - RELEASE_CHANNEL_stable_yarn_test_persistent:
-          requires:
-            - setup
-      - RELEASE_CHANNEL_stable_yarn_test_www:
-          requires:
-            - setup
-      - RELEASE_CHANNEL_stable_yarn_test_www_variant:
-          requires:
-            - setup
-      - RELEASE_CHANNEL_stable_yarn_test_prod_www:
-          requires:
-            - setup
-      - RELEASE_CHANNEL_stable_yarn_test_prod_www_variant:
-          requires:
-            - setup
-      - RELEASE_CHANNEL_stable_yarn_build:
-          requires:
-            - setup
-      - process_artifacts:
-          requires:
-            - RELEASE_CHANNEL_stable_yarn_build
-      - sizebot_stable:
-          requires:
-            - RELEASE_CHANNEL_stable_yarn_build
-      - RELEASE_CHANNEL_stable_yarn_lint_build:
-          requires:
-            - RELEASE_CHANNEL_stable_yarn_build
-      - RELEASE_CHANNEL_stable_yarn_test_build:
-          requires:
-            - RELEASE_CHANNEL_stable_yarn_build
-      - RELEASE_CHANNEL_stable_yarn_test_build_prod:
-          requires:
-            - RELEASE_CHANNEL_stable_yarn_build
-      - RELEASE_CHANNEL_stable_yarn_test_dom_fixtures:
-          requires:
-            - RELEASE_CHANNEL_stable_yarn_build
+  # stable:
+  #   jobs:
+  #     - setup
+  #     - yarn_lint:
+  #         requires:
+  #           - setup
+  #     - yarn_flow:
+  #         requires:
+  #           - setup
+  #     - RELEASE_CHANNEL_stable_yarn_test:
+  #         requires:
+  #           - setup
+  #     - RELEASE_CHANNEL_stable_yarn_test_prod:
+  #         requires:
+  #           - setup
+  #     - RELEASE_CHANNEL_stable_yarn_test_persistent:
+  #         requires:
+  #           - setup
+  #     - RELEASE_CHANNEL_stable_yarn_test_www:
+  #         requires:
+  #           - setup
+  #     - RELEASE_CHANNEL_stable_yarn_test_www_variant:
+  #         requires:
+  #           - setup
+  #     - RELEASE_CHANNEL_stable_yarn_test_prod_www:
+  #         requires:
+  #           - setup
+  #     - RELEASE_CHANNEL_stable_yarn_test_prod_www_variant:
+  #         requires:
+  #           - setup
+  #     - RELEASE_CHANNEL_stable_yarn_build:
+  #         requires:
+  #           - setup
+  #     - process_artifacts:
+  #         requires:
+  #           - RELEASE_CHANNEL_stable_yarn_build
+  #     - sizebot_stable:
+  #         requires:
+  #           - RELEASE_CHANNEL_stable_yarn_build
+  #     - RELEASE_CHANNEL_stable_yarn_lint_build:
+  #         requires:
+  #           - RELEASE_CHANNEL_stable_yarn_build
+  #     - RELEASE_CHANNEL_stable_yarn_test_build:
+  #         requires:
+  #           - RELEASE_CHANNEL_stable_yarn_build
+  #     - RELEASE_CHANNEL_stable_yarn_test_build_prod:
+  #         requires:
+  #           - RELEASE_CHANNEL_stable_yarn_build
+  #     - RELEASE_CHANNEL_stable_yarn_test_dom_fixtures:
+  #         requires:
+  #           - RELEASE_CHANNEL_stable_yarn_build
 
   experimental:
     jobs:
       - setup
-      - yarn_test:
-          requires:
-            - setup
-      - yarn_test_prod:
-          requires:
-            - setup
-      - yarn_test_www:
-          requires:
-            - setup
-      - yarn_test_www_variant:
-          requires:
-            - setup
-      - yarn_test_prod_www:
-          requires:
-            - setup
-      - yarn_test_prod_www_variant:
-          requires:
-            - setup
+      # - yarn_test:
+      #     requires:
+      #       - setup
+      # - yarn_test_prod:
+      #     requires:
+      #       - setup
+      # - yarn_test_www:
+      #     requires:
+      #       - setup
+      # - yarn_test_www_variant:
+      #     requires:
+      #       - setup
+      # - yarn_test_prod_www:
+      #     requires:
+      #       - setup
+      # - yarn_test_prod_www_variant:
+      #     requires:
+      #       - setup
       - yarn_build:
           requires:
             - setup
-      - process_artifacts_experimental:
-          requires:
-            - yarn_build
-      - sizebot_experimental:
-          requires:
-            - yarn_build
-      - yarn_test_build:
-          requires:
-            - yarn_build
-      - yarn_test_build_prod:
-          requires:
-            - yarn_build
-      - yarn_lint_build:
-          requires:
-            - yarn_build
-      - yarn_test_build_devtools:
-          requires:
-            - yarn_build
-      - build_devtools_and_process_artifacts:
-          requires:
-            - yarn_build
+      # - process_artifacts_experimental:
+      #     requires:
+      #       - yarn_build
+      # - sizebot_experimental:
+      #     requires:
+      #       - yarn_build
+      # - yarn_test_build:
+      #     requires:
+      #       - yarn_build
+      # - yarn_test_build_prod:
+      #     requires:
+      #       - yarn_build
+      # - yarn_lint_build:
+      #     requires:
+      #       - yarn_build
+      # - yarn_test_build_devtools:
+      #     requires:
+      #       - yarn_build
+      # - build_devtools_and_process_artifacts:
+      #     requires:
+      #       - yarn_build
       - build_devtools_scheduling_profiler:
           requires:
             - yarn_build
+      - deploy_devtools_scheduling_profiler:
+          requires:
+            - build_devtools_scheduling_profiler
 
   fuzz_tests:
     triggers:
